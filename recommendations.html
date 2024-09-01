@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recommendations</title>
+</head>
+<body>
+    <h1>Recommended Movies</h1>
+    {% if movies %}
+        <ul>
+            {% for movie in movies %}
+                <li>{{ movie.title }} ({{ movie.length }} min) - Genre: {{ movie.genre }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No recommendations available.</p>
+    {% endif %}
+    <a href="{{ url_for('search', username=username) }}">Back to Search</a>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Recommender</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            width: 100%;
+            background-color: #333;
+            padding: 20px;
+            color: white;
+            text-align: center;
+        }
+
+        .search-interface {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .search-interface label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .search-interface input {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .autocomplete-items {
+            position: absolute;
+            background-color: white;
+            border: 1px solid #d4d4d4;
+            border-bottom: none;
+            border-top: none;
+            z-index: 99;
+            left: 0;
+            right: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .autocomplete-item {
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        .autocomplete-item:hover {
+            background-color: #e9e9e9;
+        }
+
+        .bold {
+            font-weight: bold;
+        }
+
+        .search-results {
+            width: 100%;
+            max-width: 800px;
+            margin-top: 30px;
+        }
+
+        .search-results ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .search-results li {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-results img {
+            width: 80px;
+            height: 120px;
+            margin-right: 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-results p {
+            margin: 0;
+            font-size: 18px;
+        }
+    </style>
+    <script>
+        function maintainSearchOptions() {
+            document.getElementById('genre').value = "{{ genre }}";
+            document.getElementById('length').value = "{{ length }}";
+            document.getElementById('director').value = "{{ director }}";
+            document.getElementById('actors').value = "{{ actors }}";
+            document.getElementById('rating').value = "{{ rating }}";
+        }
+    </script>
+</head>
+<body onload="maintainSearchOptions()">
+    <header>
+        <h1>Movie Recommender</h1>
+    </header>
+
+    <div class="search-interface">
+        <form id="searchForm" action="{{ url_for('search') }}" method="GET">
+            <label for="genre">Genre:</label>
+            <input type="text" id="genre" name="genre" value="{{ genre|default('') }}" oninput="getAutocompleteSuggestions(this.id)">
+
+            <div id="genre-suggestions" class="autocomplete-items"></div>
+
+            <label for="length">Length (e.g., 90-120):</label>
+            <input type="text" id="length" name="length" value="{{ length|default('') }}" oninput="getAutocompleteSuggestions(this.id)">
+
+            <div id="length-suggestions" class="autocomplete-items"></div>
+
+            <label for="director">Director:</label>
+            <input type="text" id="director" name="director" value="{{ director|default('') }}" oninput="getAutocompleteSuggestions(this.id)">
+
+            <div id="director-suggestions" class="autocomplete-items"></div>
+
+            <label for="actors">Actors:</label>
+            <input type="text" id="actors" name="actors" value="{{ actors|default('') }}" oninput="getAutocompleteSuggestions(this.id)">
+
+            <div id="actors-suggestions" class="autocomplete-items"></div>
+
+            <label for="rating">Letterboxd Rating:</label>
+            <input type="text" id="rating" name="rating" value="{{ rating|default('') }}" oninput="getAutocompleteSuggestions(this.id)">
+
+            <div id="rating-suggestions" class="autocomplete-items"></div>
+        </form>
+    </div>
+
+    <div class="search-results">
+        {% if results %}
+            <h2>Search Results</h2>
+            <ul>
+                {% for movie in results %}
+                    <li>
+                        <a href="{{ movie['letterbox_url'] }}" target="_blank">
+                            <img src="{{ movie['poster_url'] }}" alt="{{ movie['title'] }} poster">
+                            <p>{{ movie['title'] }}</p>
+                        </a>
+                    </li>                
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No results found.</p>
+        {% endif %}
+    </div>
+
+    <script>
+        let typingTimer;
+        const doneTypingInterval = 300; 
+
+        function getAutocompleteSuggestions(inputId) {
+            const input = document.getElementById(inputId);
+            const suggestionsContainer = document.getElementById(`${inputId}-suggestions`);
+            const query = input.value;
+
+            if (!query) {
+                suggestionsContainer.innerHTML = '';
+                return;
+            }
+
+            fetch(`/autocomplete?field=${inputId}&query=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    let suggestionsHTML = '';
+
+                    data.suggestions.forEach(suggestion => {
+                        const boldPart = suggestion.substr(0, query.length);
+                        const restPart = suggestion.substr(query.length);
+                        suggestionsHTML += `<div class="autocomplete-item" onclick="selectSuggestion('${inputId}', '${suggestion}')"><span class="bold">${boldPart}</span>${restPart}</div>`;
+                    });
+
+                    suggestionsContainer.innerHTML = suggestionsHTML;
+                });
+        }
+
+        function selectSuggestion(inputId, suggestion) {
+            const input = document.getElementById(inputId);
+            input.value = suggestion;
+            document.getElementById('searchForm').submit();
+        }
+
+        const inputs = document.querySelectorAll('#searchForm input');
+
+        inputs.forEach(input => {
+            input.addEventListener('keyup', () => {
+                clearTimeout(typingTimer);
+                typingTimer = setTimeout(() => {
+                    document.getElementById('searchForm').submit();
+                }, doneTypingInterval);
+            });
+
+            input.addEventListener('keydown', () => {
+                clearTimeout(typingTimer);
+            });
+        });
+    </script>
+</body>
+</html>

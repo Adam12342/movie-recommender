@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Recommendations</title>
+    <style>
+        .movie-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .movie-item {
+            margin: 15px;
+            text-align: center;
+        }
+        .movie-item img {
+            width: 150px;
+            height: 225px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .movie-item p {
+            margin-top: 10px;
+            font-size: 1rem;
+        }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script>
+        function maintainSearchOptions() {
+            document.getElementById('genre').value = "{{ genre }}";
+            document.getElementById('length').value = "{{ length }}";
+        }
+    </script>
+</head>
+<body onload="maintainSearchOptions()">
+
+    <div class="search-options">
+        <form action="{{ url_for('search') }}" method="GET" id="search-form">
+            <label for="genre" class="dropdown-label">Genre:</label>
+            <select name="genre" id="genre" class="dropdown" onchange="document.getElementById('search-form').submit();">
+                <option value="">Select Genre</option>
+                <option value="Action">Action</option>
+                <option value="Drama">Drama</option>
+                <option value="Comedy">Comedy</option>
+            </select>
+
+            <label for="length" class="dropdown-label">Length:</label>
+            <select name="length" id="length" class="dropdown" onchange="document.getElementById('search-form').submit();">
+                <option value="">Select Length</option>
+                <option value="90-120">90-120 minutes</option>
+                <option value="120-150">120-150 minutes</option>
+            </select>
+
+        </form>
+    </div>
+
+    <div class="search-results">
+        {% if results %}
+            <h2>Search Results</h2>
+            <ul>
+                {% for movie in results %}
+                    <li>
+                        <a href="{{ movie['letterbox_url'] }}" target="_blank">
+                            <img src="{{ movie['poster_url'] }}" alt="{{ movie['title'] }} poster">
+                            <p>{{ movie['title'] }}</p>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No results found.</p>
+        {% endif %}
+    </div>
+
+</body>
+</html>

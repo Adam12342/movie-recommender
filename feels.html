@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Feels</title>
+</head>
+<body>
+    <h1>Movie Feels</h1>
+    <ul>
+        {% for feel, count in feels %}
+            <li>{{ feel }} - {{ count }} movies</li>
+        {% endfor %}
+    </ul>
+    <a href="{{ url_for('search', username='your_username_here') }}">Back to Search</a>
+</body>
+</html>
